@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/onaci/docker-ona/cmd"
+	"github.com/onaci/docker-ona/cli"
 )
 
 func main() {
