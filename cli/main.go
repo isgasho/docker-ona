@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	cmds "github.com/onaci/docker-ona/cmd"
+	"github.com/onaci/docker-ona/cmds"
 
 	"github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli-plugins/plugin"
