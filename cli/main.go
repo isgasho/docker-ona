@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onaci/docker-ona/cmds"
+	"github.com/onaci/docker-ona/config"
 
 	"github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli-plugins/plugin"
@@ -63,8 +63,8 @@ func RegisterCommands() {
 				}
 
 				fmt.Fprintf(dockerCli.Out(), "Hello %s!\n", who)
-				fmt.Fprintf(dockerCli.Out(), "gitlab: %s\n", cmds.GitlabServer)
-				fmt.Fprintf(dockerCli.Out(), "vault: %s\n", cmds.VaultServer)
+				fmt.Fprintf(dockerCli.Out(), "gitlab: %s\n", config.GitlabServer)
+				fmt.Fprintf(dockerCli.Out(), "vault: %s\n", config.VaultServer)
 
 				dockerCli.ConfigFile().SetPluginConfig("helloworld", "lastwho", who)
 				return dockerCli.ConfigFile().Save()
@@ -73,8 +73,9 @@ func RegisterCommands() {
 		flags := cmd.Flags()
 
 		// TODO: it'd be nice to be able to get the defaults from the plugin config file, but dockerCli.ConfigFile() isn't initilised until the cmdline is parsed..
-		flags.StringVar(&cmds.GitlabServer, "gitlab", "git.ona.im", "Show deployments managed by this gitlab server")
-		flags.StringVar(&cmds.VaultServer, "vault", "vault.ona.im", "Use Secrets from vault server")
+		//       which also suggests the idea of contexts...
+		flags.StringVar(&config.GitlabServer, "gitlab", "git.ona.im", "Show deployments managed by this gitlab server")
+		flags.StringVar(&config.VaultServer, "vault", "vault.ona.im", "Use Secrets from vault server")
 
 		cmd.AddCommand(lsFunc(dockerCli))
 		cmd.AddCommand(apiversion, exitStatus2)
