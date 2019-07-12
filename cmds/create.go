@@ -12,7 +12,8 @@ import (
 )
 
 func CreateCommand(output *streams.Out, params []string) error {
-	fmt.Fprintf(output, "Create a new deployment %s on %s:\n", params[0], config.GitlabServer)
+	domain := params[0]
+	fmt.Fprintf(output, "Create a new deployment %s on %s:\n", domain, config.GitlabServer)
 	//fmt.Fprintf(output, "using  %s\n", config.VaultServer)
 
 	// Step 1: get the user to logged into vault and get a token
@@ -33,17 +34,32 @@ func CreateCommand(output *streams.Out, params []string) error {
 	git.SetBaseURL(fmt.Sprintf("https://%s", config.GitlabServer))
 
 	// make a group
+	g := &gitlab.CreateGroupOptions{
+		Name:                 gitlab.String(domain),
+		Path:                 gitlab.String(domain),
+		Description:          gitlab.String("auto-created by docker ona create"),
+		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
+	}
+	group, _, err := git.Groups.CreateGroup(g)
+	if err != nil {
+		log.Fatalf("Creating group %s", err)
+	}
+	fmt.Printf("Something %#v", group)
 
 	// Create new project
 	p := &gitlab.CreateProjectOptions{
-		Name:                 gitlab.String("My Project"),
-		Description:          gitlab.String("Just a test project to play with"),
+		Name:                 gitlab.String("swarm-infra"),
+		//Path:                 gitlab.String(domain+"/swarm-infra"),
+		NamespaceID:		&group.ID,
+		Description:          gitlab.String("What every project needs :)"),
 		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
 		ImportURL:			gitlab.String("https://github.com/onaci/swarm-infra"),
+		Mirror: gitlab.Bool(true),
+		MirrorTriggerBuilds: gitlab.Bool(true),
 	}
 	project, _, err := git.Projects.CreateProject(p)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Creating project %s", err)
 	}
 	fmt.Printf("Something %#v", project)
 
