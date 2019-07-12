@@ -104,7 +104,10 @@ func RegisterCommands() {
 			getConfigValueExit(dockerCli, "vaulttoken", ""),
 			"Vault server user token")
 		
-		cmd.AddCommand(lsFunc(dockerCli))
+		cmd.AddCommand(
+			createFunc(dockerCli),
+			lsFunc(dockerCli),
+		)
 		cmd.AddCommand(apiversion, exitStatus2)
 		return cmd
 	},
@@ -142,4 +145,12 @@ func getConfigValueExit(dockerCli command.Cli, name, defaultValue string) string
 		os.Exit(-1)
 	}
 	return value
+}
+
+func saveVaultToken() {
+	// TODO: would be nice to only save if the value changed..
+	configFile.SetPluginConfig(dockerPluginCommand, "vaulttoken", config.VaultToken)
+	if err := configFile.Save(); err != nil {
+		os.Exit(-1)
+	}
 }

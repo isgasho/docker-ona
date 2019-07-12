@@ -8,12 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func lsFunc(dockerCli command.Cli) *cobra.Command {
+func createFunc(dockerCli command.Cli) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "ls",
-		Short: "list all deployments",
-		RunE: func(cc *cobra.Command, _ []string) error {
-			err := cmds.LsCommand(dockerCli.Out())
+		Use:   "create",
+		Short: "create a deployment",
+		RunE: func(cc *cobra.Command, params []string) error {
+			err := cmds.CreateCommand(dockerCli.Out(), params)
 			if err != nil {
 				os.Exit(-1)
 			}

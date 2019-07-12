@@ -56,7 +56,7 @@ func Login(output *streams.Out) (client *api.Client, err error) {
 	}
 
 	config.VaultToken = auth.Auth.ClientToken
-	fmt.Fprintf(output, "Auth good: token: %s\n", config.VaultToken)
+	//fmt.Fprintf(output, "Auth good: token: %s\n", config.VaultToken)
 	return client, err
 }
 

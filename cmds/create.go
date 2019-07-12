@@ -11,8 +11,8 @@ import (
 	gitlab "github.com/xanzy/go-gitlab"
 )
 
-func LsCommand(output *streams.Out) error {
-	fmt.Fprintf(output, "List all deployments on %s:\n", config.GitlabServer)
+func CreateCommand(output *streams.Out, params []string) error {
+	fmt.Fprintf(output, "Create a new deployment %s on %s:\n", params[0], config.GitlabServer)
 	//fmt.Fprintf(output, "using  %s\n", config.VaultServer)
 
 	// Step 1: get the user to logged into vault and get a token
@@ -32,31 +32,20 @@ func LsCommand(output *streams.Out) error {
 	git := gitlab.NewClient(nil, gitlabToken)
 	git.SetBaseURL(fmt.Sprintf("https://%s", config.GitlabServer))
 
-	opt := &gitlab.ListGroupsOptions{	}
+	// make a group
 
-	// Get the first page with projects.
-	gs, _, err := git.Groups.ListGroups(opt)
+	// Create new project
+	p := &gitlab.CreateProjectOptions{
+		Name:                 gitlab.String("My Project"),
+		Description:          gitlab.String("Just a test project to play with"),
+		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
+		ImportURL:			gitlab.String("https://github.com/onaci/swarm-infra"),
+	}
+	project, _, err := git.Projects.CreateProject(p)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// List all the projects we've found so far.
-	for _, g := range gs {
-		fmt.Printf("%s\n", g.Name)
-	}
-
-	// opt := &gitlab.ListProjectsOptions{	}
-
-	// // Get the first page with projects.
-	// ps, _, err := git.Projects.ListProjects(opt)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// // List all the projects we've found so far.
-	// for _, p := range ps {
-	// 	fmt.Printf("%s\n", p.Name)
-	// }
+	fmt.Printf("Something %#v", project)
 
 	return nil
 }
