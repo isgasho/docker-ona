@@ -24,12 +24,12 @@ func Login(output *streams.Out) (client *api.Client, err error) {
 	client.SetToken(config.VaultToken)
 	// TODO: if a token exists, try it, and if that fails, ask the user to auth
 	if config.VaultToken != "" {
-		secret, err := client.Logical().Read(
-			fmt.Sprintf("%s/data/%s",
+		_, err := client.Logical().Read(
+			fmt.Sprintf("%s/data/",
 				config.VaultPath,
-				"git.ona.im",
+				"asdf",	// it doesn't matter what the secret is to verify that token auth is ok
 			))
-		fmt.Printf("mmmm: %#v\n", secret)
+		//fmt.Printf("mmmm: %#v\n", secret)
 		if err == nil {
 			return client, nil
 		}
@@ -62,7 +62,6 @@ func Login(output *streams.Out) (client *api.Client, err error) {
 
 func GetSecret(client *api.Client, path, key, value string) (val string, err error) {
 	// Step 2: use vault to get the token for the gitlab server
-	fmt.Printf("token: %s\n", config.VaultToken)
 	client.SetToken(config.VaultToken)
 	secret, err := client.Logical().Read(
 		fmt.Sprintf("%s/data/%s",
