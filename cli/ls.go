@@ -1,23 +1,28 @@
-package cmd
+package cli
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/docker/cli/cli/command"
+	"github.com/onaci/docker-ona/cmd"
 	"github.com/spf13/cobra"
 )
 
 func lsFunc(dockerCli command.Cli) *cobra.Command {
 	var gitlabServer string
-	cmd := &cobra.Command{
+	c := &cobra.Command{
 		Use:   "ls",
 		Short: "list all deployments",
-		Run: func(cmd *cobra.Command, _ []string) {
-			fmt.Fprintf(dockerCli.Out(), "List all deployments on %s\n", gitlabServer)
+		RunE: func(cc *cobra.Command, _ []string) error {
+			err := cmd.LsCommand(dockerCli.Out(), gitlabServer)
+			if err != nil {
+				os.Exit(-1)
+			}
+			return nil
 		},
 	}
-	flags := cmd.Flags()
+	flags := c.Flags()
 	flags.StringVar(&gitlabServer, "gitlab", "git.ona.im", "Show deployments managed by this gitlab server")
 
-	return cmd
+	return c
 }

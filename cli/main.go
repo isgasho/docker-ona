@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"context"
@@ -10,6 +10,11 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
+
+// dockerCli has these IO hooks:
+// In() *streams.In
+// Out() *streams.Out
+// Err() io.Writer
 
 func RegisterCommands() {
 	plugin.Run(func(dockerCli command.Cli) *cobra.Command {
