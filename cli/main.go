@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli-plugins/plugin"
 	"github.com/docker/cli/cli/command"
+	cliconfig "github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/config/configfile"
 	"github.com/spf13/cobra"
 )
 
@@ -72,10 +75,21 @@ func RegisterCommands() {
 		}
 		flags := cmd.Flags()
 
-		// TODO: it'd be nice to be able to get the defaults from the plugin config file, but dockerCli.ConfigFile() isn't initilised until the cmdline is parsed..
+		// Get the defaults from .docker/config.json file
 		//       which also suggests the idea of contexts...
-		flags.StringVar(&config.GitlabServer, "gitlab", "git.ona.im", "Show deployments managed by this gitlab server")
-		flags.StringVar(&config.VaultServer, "vault", "vault.ona.im", "Use Secrets from vault server")
+		defaultGitlabServer, err := getConfigValue(dockerCli, "gitlab", "git.ona.im")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+		defaultVaultServer, err := getConfigValue(dockerCli, "vault", "vault.ona.im")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+
+		flags.StringVar(&config.GitlabServer, "gitlab", defaultGitlabServer, "Show deployments managed by this gitlab server")
+		flags.StringVar(&config.VaultServer, "vault", defaultVaultServer, "Use Secrets from vault server")
 
 		cmd.AddCommand(lsFunc(dockerCli))
 		cmd.AddCommand(apiversion, exitStatus2)
@@ -86,4 +100,22 @@ func RegisterCommands() {
 			Vendor:        "CSIRO Oceans & Atmosphere.",
 			Version:       "ONA deployment v0.1.0",
 		})
+}
+
+var configFile *configfile.ConfigFile
+func getConfigValue(dockerCli command.Cli, name, defaultValue string) (string, error) {
+	if configFile == nil {
+		configFile = cliconfig.LoadDefaultConfigFile(dockerCli.Err())
+		if configFile == nil {
+			return "", errors.New("Failed to load Docker config.json")
+		}
+	}
+	value, ok := configFile.PluginConfig(dockerPluginCommand, name)
+	if !ok {
+		value = defaultValue
+		configFile.SetPluginConfig(dockerPluginCommand, name, value)
+		err := configFile.Save()
+		return value, err
+	}
+	return value, nil
 }
