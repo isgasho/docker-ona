@@ -9,20 +9,17 @@ import (
 )
 
 func lsFunc(dockerCli command.Cli) *cobra.Command {
-	var gitlabServer string
 	c := &cobra.Command{
 		Use:   "ls",
 		Short: "list all deployments",
 		RunE: func(cc *cobra.Command, _ []string) error {
-			err := cmd.LsCommand(dockerCli.Out(), gitlabServer)
+			err := cmd.LsCommand(dockerCli.Out())
 			if err != nil {
 				os.Exit(-1)
 			}
 			return nil
 		},
 	}
-	flags := c.Flags()
-	flags.StringVar(&gitlabServer, "gitlab", "git.ona.im", "Show deployments managed by this gitlab server")
 
 	return c
 }

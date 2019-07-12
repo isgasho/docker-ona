@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	cmds "github.com/onaci/docker-ona/cmd"
+
 	"github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli-plugins/plugin"
 	"github.com/docker/cli/cli/command"
@@ -15,6 +17,8 @@ import (
 // In() *streams.In
 // Out() *streams.Out
 // Err() io.Writer
+
+var dockerPluginCommand = "ona"
 
 func RegisterCommands() {
 	plugin.Run(func(dockerCli command.Cli) *cobra.Command {
@@ -44,7 +48,7 @@ func RegisterCommands() {
 
 		var who string
 		cmd := &cobra.Command{
-			Use:   "ona",
+			Use:   dockerPluginCommand,
 			Short: "A Docker commandline plugin that provisions complete system deployments using the infrastructure we have at CSIRO O&A.",
 			// This is redundant but included to exercise
 			// the path where a plugin overrides this
@@ -59,13 +63,18 @@ func RegisterCommands() {
 				}
 
 				fmt.Fprintf(dockerCli.Out(), "Hello %s!\n", who)
+				fmt.Fprintf(dockerCli.Out(), "gitlab: %s\n", cmds.GitlabServer)
+				fmt.Fprintf(dockerCli.Out(), "vault: %s\n", cmds.VaultServer)
+
 				dockerCli.ConfigFile().SetPluginConfig("helloworld", "lastwho", who)
 				return dockerCli.ConfigFile().Save()
 			},
 		}
-
 		flags := cmd.Flags()
-		flags.StringVar(&who, "who", "", "Who are we addressing?")
+
+		// TODO: it'd be nice to be able to get the defaults from the plugin config file, but dockerCli.ConfigFile() isn't initilised until the cmdline is parsed..
+		flags.StringVar(&cmds.GitlabServer, "gitlab", "git.ona.im", "Show deployments managed by this gitlab server")
+		flags.StringVar(&cmds.VaultServer, "vault", "vault.ona.im", "Use Secrets from vault server")
 
 		cmd.AddCommand(lsFunc(dockerCli))
 		cmd.AddCommand(apiversion, exitStatus2)
@@ -74,6 +83,6 @@ func RegisterCommands() {
 		manager.Metadata{
 			SchemaVersion: "0.1.0",
 			Vendor:        "CSIRO Oceans & Atmosphere.",
-			Version:       "ONA deployment",
+			Version:       "ONA deployment v0.1.0",
 		})
 }
