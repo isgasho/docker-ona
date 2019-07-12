@@ -33,6 +33,47 @@ func CreateCommand(output *streams.Out, params []string) error {
 	git := gitlab.NewClient(nil, gitlabToken)
 	git.SetBaseURL(fmt.Sprintf("https://%s", config.GitlabServer))
 
+	group := createGroup(git, domain)
+	createProject(git, group, "swarm-infra", "https://github.com/onaci/swarm-infra")
+
+	return nil
+}
+
+func createProject(git *gitlab.Client, group *gitlab.Group, name, url string) *gitlab.Project {
+	// see if the group already exists
+	psearch, _, err := git.Projects.GetProject((interface{}) (group.Name +"/"+name), &gitlab.GetProjectOptions{})
+	if err == nil && psearch != nil {
+		return psearch
+	}
+
+	// Create new project
+	p := &gitlab.CreateProjectOptions{
+		Name:                 gitlab.String(name),
+		NamespaceID:		&group.ID,
+		Description:          gitlab.String("What every project needs :)"),
+		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
+		ImportURL:			gitlab.String(url),
+		Mirror: gitlab.Bool(true),
+		MirrorTriggerBuilds: gitlab.Bool(true),
+	}
+	project, _, err := git.Projects.CreateProject(p)
+	if err != nil {
+		log.Fatalf("Creating project %s", err)
+	}
+	fmt.Printf("Something %#v", project)
+	return project
+}
+
+func createGroup(git *gitlab.Client, domain string) *gitlab.Group {
+	// see if the group already exists
+	gsearch, _, err := git.Groups.SearchGroup(domain)
+	if err != nil {
+		log.Fatalf("Searching for group %s", err)
+	}
+	if len(gsearch) > 0 {
+		return gsearch[0]
+	}
+
 	// make a group
 	g := &gitlab.CreateGroupOptions{
 		Name:                 gitlab.String(domain),
@@ -45,23 +86,5 @@ func CreateCommand(output *streams.Out, params []string) error {
 		log.Fatalf("Creating group %s", err)
 	}
 	fmt.Printf("Something %#v", group)
-
-	// Create new project
-	p := &gitlab.CreateProjectOptions{
-		Name:                 gitlab.String("swarm-infra"),
-		//Path:                 gitlab.String(domain+"/swarm-infra"),
-		NamespaceID:		&group.ID,
-		Description:          gitlab.String("What every project needs :)"),
-		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
-		ImportURL:			gitlab.String("https://github.com/onaci/swarm-infra"),
-		Mirror: gitlab.Bool(true),
-		MirrorTriggerBuilds: gitlab.Bool(true),
-	}
-	project, _, err := git.Projects.CreateProject(p)
-	if err != nil {
-		log.Fatalf("Creating project %s", err)
-	}
-	fmt.Printf("Something %#v", project)
-
-	return nil
+	return group
 }

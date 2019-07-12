@@ -43,20 +43,24 @@ func LsCommand(output *streams.Out) error {
 	// List all the projects we've found so far.
 	for _, g := range gs {
 		fmt.Printf("%s\n", g.Name)
+
+		opt := &gitlab.ListProjectsOptions{	}
+
+		// Get the first page with projects.
+		ps, _, err := git.Projects.ListProjects(opt)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// List all the projects we've found so far.
+		for _, p := range ps {
+			if p.Namespace.Name == g.Name {
+				fmt.Printf("\t%s\n", p.Name)
+			}
+		}
+
 	}
 
-	// opt := &gitlab.ListProjectsOptions{	}
-
-	// // Get the first page with projects.
-	// ps, _, err := git.Projects.ListProjects(opt)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// // List all the projects we've found so far.
-	// for _, p := range ps {
-	// 	fmt.Printf("%s\n", p.Name)
-	// }
 
 	return nil
 }
