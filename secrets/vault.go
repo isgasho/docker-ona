@@ -2,6 +2,9 @@ package secrets
 
 import (
 	"fmt"
+	"os"
+
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/onaci/docker-ona/config"
 
@@ -10,8 +13,6 @@ import (
 )
 
 func Login(output *streams.Out) (client *api.Client, err error) {
-	// TODO: if a token exists, try it, and if that fails, ask the user to auth
-
 	vConfig := &api.Config{
 		Address: fmt.Sprintf("https://%s", config.VaultServer),
 	}
@@ -20,8 +21,30 @@ func Login(output *streams.Out) (client *api.Client, err error) {
 		fmt.Println(err)
 		return nil, err
 	}
-	client.SetToken("token")
+	client.SetToken(config.VaultToken)
+	// TODO: if a token exists, try it, and if that fails, ask the user to auth
+	if config.VaultToken != "" {
+		secret, err := client.Logical().Read(
+			fmt.Sprintf("%s/data/%s",
+				config.VaultPath,
+				"git.ona.im",
+			))
+		fmt.Printf("mmmm: %#v\n", secret)
+		if err == nil {
+			return client, nil
+		}
+	}
 
+	if config.VaultPassword == "" {
+		fmt.Fprintf(output, "enter password for: %s as ldap user: %s\n", config.VaultServer, config.VaultUser)
+
+		passphrase, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		config.VaultPassword = string(passphrase)
+	}
 	auth, err := client.Logical().Write(
 		fmt.Sprintf("auth/ldap/login/%s", config.VaultUser),
 		map[string]interface{}{
@@ -33,12 +56,13 @@ func Login(output *streams.Out) (client *api.Client, err error) {
 	}
 
 	config.VaultToken = auth.Auth.ClientToken
-	fmt.Fprintf(output, "token: %s\n", config.VaultToken)
+	fmt.Fprintf(output, "Auth good: token: %s\n", config.VaultToken)
 	return client, err
 }
 
-func GetSecret(client *api.Client, path, key, value string) (string, error) {
+func GetSecret(client *api.Client, path, key, value string) (val string, err error) {
 	// Step 2: use vault to get the token for the gitlab server
+	fmt.Printf("token: %s\n", config.VaultToken)
 	client.SetToken(config.VaultToken)
 	secret, err := client.Logical().Read(
 		fmt.Sprintf("%s/data/%s",

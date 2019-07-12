@@ -77,20 +77,33 @@ func RegisterCommands() {
 
 		// Get the defaults from .docker/config.json file
 		//       which also suggests the idea of contexts...
-		defaultGitlabServer, err := getConfigValue(dockerCli, "gitlab", "git.ona.im")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(-1)
-		}
-		defaultVaultServer, err := getConfigValue(dockerCli, "vault", "vault.ona.im")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(-1)
-		}
+		flags.StringVar(
+			&config.GitlabServer,
+			"gitlab",
+			getConfigValueExit(dockerCli, "gitlab", "git.ona.im"),
+			"Show deployments managed by this gitlab server")
+		flags.StringVar(
+			&config.VaultServer,
+			"vault",
+			getConfigValueExit(dockerCli, "vault", "vault.ona.im"),
+			"Use Secrets from vault server")
+		flags.StringVar(
+			&config.VaultPath,
+			"vaultpath",
+			getConfigValueExit(dockerCli, "vaultpath", "secrets/kv2"),
+			"Use Secrets from vault server path")
 
-		flags.StringVar(&config.GitlabServer, "gitlab", defaultGitlabServer, "Show deployments managed by this gitlab server")
-		flags.StringVar(&config.VaultServer, "vault", defaultVaultServer, "Use Secrets from vault server")
-
+		flags.StringVar(
+			&config.VaultUser,
+			"vaultuser",
+			getConfigValueExit(dockerCli, "vaultuser", ""),
+			"Vault server user")
+		flags.StringVar(
+			&config.VaultToken,
+			"vaulttoken",
+			getConfigValueExit(dockerCli, "vaulttoken", ""),
+			"Vault server user token")
+		
 		cmd.AddCommand(lsFunc(dockerCli))
 		cmd.AddCommand(apiversion, exitStatus2)
 		return cmd
@@ -113,9 +126,20 @@ func getConfigValue(dockerCli command.Cli, name, defaultValue string) (string, e
 	value, ok := configFile.PluginConfig(dockerPluginCommand, name)
 	if !ok {
 		value = defaultValue
-		configFile.SetPluginConfig(dockerPluginCommand, name, value)
-		err := configFile.Save()
-		return value, err
+		if defaultValue != "" {
+			configFile.SetPluginConfig(dockerPluginCommand, name, value)
+			err := configFile.Save()
+			return value, err
+		}
 	}
 	return value, nil
+}
+
+func getConfigValueExit(dockerCli command.Cli, name, defaultValue string) string {
+	value, err := getConfigValue(dockerCli, name, defaultValue)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+	return value
 }

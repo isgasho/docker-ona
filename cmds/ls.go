@@ -22,12 +22,12 @@ func LsCommand(output *streams.Out) error {
 	// Step 2: use vault to get the token for the gitlab server
 	gitlabUser, err := secrets.GetSecret(client, config.VaultPath, config.GitlabServer, "USER")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error getting USER: %s\n", err)
 		return err
 	}
 	gitlabToken, err := secrets.GetSecret(client, config.VaultPath, config.GitlabServer, "TOKEN")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error getting TOKEN: %s\n", err)
 		return err
 	}
 	fmt.Printf("hello: %v - %s\n", gitlabUser, gitlabToken)
